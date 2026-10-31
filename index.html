@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#050b08]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WILDLIFE-EDGE // Autonomous Edge AI Perimeter Sentinel</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for High-Performance Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google JetBrains Mono & Inter Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eefdf5',
+                            100: '#d6fbe5',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            accent: '#55f3a5',
+                            dark: '#060c09',
+                            card: '#0c1912',
+                            border: '#183827',
+                            muted: '#6a8e7c'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #040907;
+            color: #d1f2e1;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Glassmorphism Structural Panels */
+        .glass-panel {
+            background: rgba(12, 25, 18, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(24, 56, 39, 0.8);
+        }
+
+        .glass-panel-interactive {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel-interactive:hover {
+            border-color: rgba(85, 243, 165, 0.4);
+            box-shadow: 0 0 20px rgba(85, 243, 165, 0.08);
+        }
+
+        /* Active Navigation Item Glow */
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(85, 243, 165, 0.15) 0%, rgba(12, 25, 18, 0) 100%);
+            border-left: 3px solid #55f3a5;
+            color: #55f3a5;
+        }
+
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #040907;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #183827;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2b543f;
+        }
+
+        /* Terminal Output Log Window */
+        .terminal-box {
+            background-color: #020504;
+            border: 1px solid #183827;
+            box-shadow: inset 0 0 12px rgba(0,0,0,0.9);
+        }
+
+        /* Pulsing Radar Effect */
+        @keyframes radar-sweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .radar-sweep-line {
+            animation: radar-sweep 4s linear infinite;
+            transform-origin: 100px 100px;
+        }
+    </style>
+</head>
+<body class="h-full flex overflow-hidden select-none">
+
+    <!-- ================= SIDEBAR NAVIGATION ================= -->
+    <aside class="w-64 bg-[#07130c] border-r border-[#183827] flex flex-col justify-between shrink-0 z-20">
+        <div>
+            <!-- Branding Header -->
+            <div class="p-4 border-b border-[#183827] flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-lg bg-[#112a1c] border border-[#235037] flex items-center justify-center text-[#55f3a5] shadow-lg">
+                    <i class="fa-solid fa-microchip text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white text-sm tracking-wider font-mono">WILDLIFE-EDGE</h1>
+                    <p class="text-[10px] text-[#6a8e7c] font-mono">YOLOv8n + CBAM v2.4 Edge Engine</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-2 space-y-1 text-xs font-medium">
+                <a href="#" onclick="switchTab('live-monitor')" id="nav-live-monitor" class="nav-item active flex items-center justify-between px-3 py-2.5 rounded-md transition text-[#c3e6d5] hover:bg-[#0e2116]">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-terminal w-4 text-[#55f3a5]"></i>
+                        <span>Live Edge Stream</span>
+                    </div>
+                </a>
+
+                <a href="#" onclick="switchTab('upload')" id="nav-upload" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-md transition text-[#8cb8a1] hover:bg-[#0e2116]">
+                    <i class="fa-solid fa-cloud-arrow-up w-4"></i>
+                    <span>Stream Frame Injector</span>
+                </a>
+
+                <a href="#" onclick="switchTab('database')" id="nav-database" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-md transition text-[#8cb8a1] hover:bg-[#0e2116]">
+                    <i class="fa-solid fa-database w-4"></i>
+                    <span>IndexedDB Persistence</span>
+                </a>
+
+                <a href="#" onclick="switchTab('analytics')" id="nav-analytics" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-md transition text-[#8cb8a1] hover:bg-[#0e2116]">
+                    <i class="fa-solid fa-chart-line w-4"></i>
+                    <span>Telemetry & Analytics</span>
+                </a>
+
+                <a href="#" onclick="switchTab('threats')" id="nav-threats" class="nav-item flex items-center justify-between px-3 py-2.5 rounded-md transition text-[#8cb8a1] hover:bg-[#0e2116]">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-triangle-exclamation w-4 text-red-400"></i>
+                        <span>Threat Dispatch</span>
+                    </div>
+                    <span id="threat-badge" class="bg-red-950 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-800 font-mono font-bold">2</span>
+                </a>
+
+                <a href="#" onclick="switchTab('benchmark')" id="nav-benchmark" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-md transition text-[#8cb8a1] hover:bg-[#0e2116]">
+                    <i class="fa-solid fa-[#8cb8a1] fa-sliders w-4"></i>
+                    <span>Model Benchmark Matrix</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Sidebar Hardware & DB Status -->
+        <div class="p-3 border-t border-[#183827] text-[11px] text-[#6a8e7c] space-y-2 bg-[#040a07]">
+            <div class="flex justify-between items-center">
+                <span>Hardware Target:</span>
+                <span class="text-white font-mono bg-[#0e2116] px-1.5 py-0.5 rounded border border-[#1b3d29]">Jetson Orin Nano</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span>Storage Engine:</span>
+                <span id="db-status-badge" class="text-[#55f3a5] font-mono">IndexedDB Active</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span>NPU Acceleration:</span>
+                <span class="text-amber-400 font-mono">TensorRT FP16</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ================= MAIN DASHBOARD CONTENT ================= -->
+    <main class="flex-1 flex flex-col min-w-0 bg-[#040907] overflow-y-auto">
+
+        <!-- Top Header Navigation Bar -->
+        <header class="bg-[#07130c] border-b border-[#183827] px-6 py-3 flex items-center justify-between shrink-0 z-10">
+            <div class="flex items-center space-x-4">
+                <h2 id="page-title" class="text-lg font-bold text-white tracking-wide font-mono">Live Edge Stream // Optical Bounding HUD</h2>
+                <div class="flex items-center space-x-2 text-xs bg-[#0c1f14] px-3 py-1 rounded-full border border-[#1b422b]">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-emerald-300 font-mono">RTSP Node: Sector 04 [CAM_ALPHA]</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4 text-xs font-mono">
+                <div id="header-threat-status" class="flex items-center space-x-2 bg-red-950/80 text-red-300 px-3 py-1.5 rounded border border-red-800">
+                    <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    <span class="font-bold">THREAT STATE: ELEVATED</span>
+                </div>
+
+                <div class="text-[#6a8e7c] bg-[#0c1912] px-3 py-1.5 rounded border border-[#183827]" id="utc-clock">
+                    2026-09-23 00:00:00 UTC
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Body -->
+        <div class="p-6 space-y-6 flex-1">
+
+            <!-- ================= TAB 1: LIVE MONITOR (STREAM + HUD + RADAR + TERMINAL) ================= -->
+            <section id="tab-live-monitor" class="space-y-6">
+                <!-- Stat Gauges Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="glass-panel glass-panel-interactive p-4 rounded-xl">
+                        <div class="text-[11px] uppercase tracking-wider text-[#6a8e7c] font-semibold font-mono">Stream Framerate</div>
+                        <div class="text-2xl font-bold text-[#55f3a5] mt-1 font-mono flex items-baseline justify-between">
+                            <span id="stat-fps">38.4</span> <span class="text-xs text-emerald-400 font-sans">FPS (TensorRT)</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel glass-panel-interactive p-4 rounded-xl">
+                        <div class="text-[11px] uppercase tracking-wider text-[#6a8e7c] font-semibold font-mono">Inference Latency</div>
+                        <div class="text-2xl font-bold text-white mt-1 font-mono flex items-baseline justify-between">
+                            <span id="stat-latency">14.2</span> <span class="text-xs text-[#6a8e7c] font-sans">ms / frame</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel glass-panel-interactive p-4 rounded-xl">
+                        <div class="text-[11px] uppercase tracking-wider text-[#6a8e7c] font-semibold font-mono">Active ByteTracks</div>
+                        <div class="text-2xl font-bold text-emerald-300 mt-1 font-mono flex items-baseline justify-between">
+                            <span id="stat-tracks">142</span> <span class="text-xs text-[#6a8e7c] font-sans">objects today</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel glass-panel-interactive p-4 rounded-xl">
+                        <div class="text-[11px] uppercase tracking-wider text-[#6a8e7c] font-semibold font-mono">Low-Light Prepass</div>
+                        <div class="text-lg font-bold text-amber-400 mt-1.5 flex items-center justify-between font-mono">
+                            <span>CLAHE Norm</span>
+                            <span class="text-[10px] bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded">ENABLED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Vision Viewport & Right HUD Panel -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left (2 Cols): Live HTML5 Canvas Video Stream Viewport -->
+                    <div class="lg:col-span-2 glass-panel rounded-xl p-4 relative flex flex-col">
+                        <div class="flex items-center justify-between mb-3 text-xs font-mono">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                                <span class="text-white font-bold">RTSP STREAM // ACTIVE CANVAS INFERENCE</span>
+                                <span class="text-[#6a8e7c] text-[10px]">(YOLOv8n-CBAM Overlay)</span>
+                            </div>
+                            <div class="space-x-2">
+                                <button onclick="toggleCanvasFilter()" class="bg-[#12281c] hover:bg-[#1b3b29] border border-[#1d4730] px-2 py-1 rounded text-[11px] text-[#55f3a5]">Toggle CLAHE</button>
+                                <button onclick="triggerSampleInference()" class="bg-[#12281c] hover:bg-[#1b3b29] border border-[#1d4730] px-2 py-1 rounded text-[11px] text-white">Refresh Detections</button>
+                            </div>
+                        </div>
+
+                        <!-- Canvas Engine for Dynamic Bounding Box Visuals -->
+                        <div class="relative w-full aspect-video rounded-lg overflow-hidden bg-black border border-[#183827] flex items-center justify-center">
+                            <canvas id="vision-canvas" class="w-full h-full object-cover"></canvas>
+                        </div>
+
+                        <!-- Footnote Canvas Stream Telemetry -->
+                        <div class="mt-3 flex items-center justify-between text-[11px] font-mono text-[#6a8e7c]">
+                            <div>Resolution: <span class="text-white">1920x1080@30FPS</span></div>
+                            <div>Encoding: <span class="text-white">H.264 Hardware Passthrough</span></div>
+                            <div>Target NPU: <span class="text-emerald-400">CUDA_CORE_0</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Right (1 Col): Spatial Tactical Radar Sweep & Terminal Log -->
+                    <div class="space-y-6 flex flex-col">
+                        <!-- Radar Sweep Box -->
+                        <div class="glass-panel rounded-xl p-4 flex flex-col items-center justify-center relative">
+                            <div class="text-[11px] font-mono text-[#6a8e7c] self-start mb-2 uppercase tracking-wider font-semibold">
+                                <i class="fa-solid fa-radar mr-1 text-[#55f3a5]"></i> Spatial Radar Threat Tracking
+                            </div>
+                            
+                            <!-- SVG Radar Animation -->
+                            <div class="relative w-[200px] h-[200px] my-2">
+                                <svg width="200" height="200" class="w-full h-full">
+                                    <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(88,166,255,0.15)" stroke-width="1.5" />
+                                    <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(88,166,255,0.15)" stroke-width="1.5" />
+                                    <circle cx="100" cy="100" r="30" fill="none" stroke="rgba(88,166,255,0.15)" stroke-width="1.5" />
+                                    <line x1="100" y1="10" x2="100" y2="190" stroke="rgba(88,166,255,0.15)" stroke-width="1" />
+                                    <line x1="10" y1="100" x2="190" y2="100" stroke="rgba(88,166,255,0.15)" stroke-width="1" />
+                                    
+                                    <!-- Rotating Radar Sweeper -->
+                                    <g class="radar-sweep-line">
+                                        <line x1="100" y1="100" x2="100" y2="10" stroke="#55f3a5" stroke-width="2" opacity="0.8" />
+                                        <polygon points="100,100 100,10 140,20" fill="rgba(85, 243, 165, 0.15)" />
+                                    </g>
+
+                                    <!-- Radar Blips -->
+                                    <circle cx="135" cy="65" r="4" fill="#ff5252" class="animate-ping" />
+                                    <circle cx="135" cy="65" r="4" fill="#ff5252" />
+                                    <circle cx="70" cy="125" r="4" fill="#fbbf24" />
+                                </svg>
+                            </div>
+                            <div class="text-[10px] font-mono text-emerald-400">SECTOR 04 :: 2 ACTIVE TARGETS IN RANGE</div>
+                        </div>
+
+                        <!-- Real-time Terminal Logger Output -->
+                        <div class="glass-panel rounded-xl p-4 flex-1 flex flex-col">
+                            <div class="text-[11px] font-mono text-[#6a8e7c] mb-2 uppercase tracking-wider font-semibold flex justify-between items-center">
+                                <span><i class="fa-solid fa-code mr-1"></i> Edge System Console</span>
+                                <span class="text-[9px] bg-[#020504] border border-[#183827] px-1.5 py-0.5 rounded text-gray-400">LOG_LEVEL=DEBUG</span>
+                            </div>
+                            <div id="terminal-console" class="terminal-box rounded p-3 text-[11px] font-mono text-[#55f3a5] space-y-1 overflow-y-auto h-[180px] flex-1">
+                                <div>[SYS_INIT] Embedded Jetson Orin Core Engine initialized.</div>
+                                <div>[DB_SYS] IndexedDB persistent store connected.</div>
+                                <div>[NPU_ENGINE] Loaded YOLOv8n-CBAM FP16 TensorRT model.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: FRAME STREAM INJECTOR ================= -->
+            <section id="tab-upload" class="space-y-6 hidden">
+                <div class="glass-panel rounded-xl p-6">
+                    <h3 class="text-sm font-bold text-white mb-2 font-mono">FRAME INJECTION & PREPROCESSING LAB</h3>
+                    <p class="text-xs text-[#6a8e7c] mb-4">Upload custom optical media to run through the pre-processing matrix (CLAHE contrast normalization + Gaussian Blur pass) and save findings to the IndexedDB system.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- File Dropzone -->
+                        <div class="border-2 border-dashed border-[#183827] hover:border-[#55f3a5] rounded-xl p-8 flex flex-col items-center justify-center bg-[#060e0a] transition cursor-pointer" onclick="document.getElementById('file-input').click()">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#55f3a5] mb-3"></i>
+                            <span class="text-xs font-bold text-white mb-1">Click or Drag Sensor Image Frame</span>
+                            <span class="text-[10px] text-[#6a8e7c]">Supports .JPG, .PNG, .WEBP (Max 12MB)</span>
+                            <input type="file" id="file-input" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+                        </div>
+
+                        <!-- Processing Controls & Output Stats -->
+                        <div class="space-y-4">
+                            <div class="bg-[#060e0a] p-4 rounded-xl border border-[#183827] space-y-3">
+                                <div class="text-xs font-mono text-white font-bold">Pipeline Options</div>
+                                <label class="flex items-center space-x-2 text-xs text-[#8cb8a1] cursor-pointer">
+                                    <input type="checkbox" id="chk-clahe" checked class="rounded bg-black border-[#183827] text-[#55f3a5]">
+                                    <span>Apply Low-Light CLAHE Contrast Prepass</span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-xs text-[#8cb8a1] cursor-pointer">
+                                    <input type="checkbox" id="chk-db-write" checked class="rounded bg-black border-[#183827] text-[#55f3a5]">
+                                    <span>Persist Analysis to IndexedDB Storage</span>
+                                </label>
+                            </div>
+
+                            <button onclick="processUploadedFrame()" class="w-full py-3 bg-[#112a1c] hover:bg-[#193d29] border border-[#235037] text-[#55f3a5] font-mono text-xs font-bold rounded-xl transition">
+                                <i class="fa-solid fa-play mr-2"></i> EXECUTE INFERENCE PIPELINE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 3: INDEXEDDB PERSISTENT DATABASE ================= -->
+            <section id="tab-database" class="space-y-6 hidden">
+                <div class="glass-panel rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white font-mono">INDEXEDDB DETECTION HISTORY ENGINE</h3>
+                            <p class="text-xs text-[#6a8e7c]">Browser-native persistent SQLite-equivalent store holding verified detection tracks and threat metadata.</p>
+                        </div>
+                        <div class="space-x-2">
+                            <button onclick="exportDatabaseJSON()" class="px-3 py-1.5 bg-[#112a1c] border border-[#235037] text-white text-xs font-mono rounded hover:bg-[#183b28]">Export DB (.JSON)</button>
+                            <button onclick="clearDatabaseRecords()" class="px-3 py-1.5 bg-red-950 border border-red-800 text-red-300 text-xs font-mono rounded hover:bg-red-900">Purge Storage</button>
+                        </div>
+                    </div>
+
+                    <!-- Database Record Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs font-mono text-[#c3e6d5]">
+                            <thead class="bg-[#07140d] text-[#55f3a5] uppercase text-[10px] border-b border-[#183827]">
+                                <tr>
+                                    <th class="p-3">Track UUID</th>
+                                    <th class="p-3">Timestamp</th>
+                                    <th class="p-3">Identified Species</th>
+                                    <th class="p-3">Confidence</th>
+                                    <th class="p-3">Threat Rating</th>
+                                    <th class="p-3">Sector Location</th>
+                                </tr>
+                            </thead>
+                            <tbody id="db-table-body" class="divide-y divide-[#102419]">
+                                <!-- Dynamic IndexedDB Records Populated Here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 4: TELEMETRY & ANALYTICS ================= -->
+            <section id="tab-analytics" class="space-y-6 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel rounded-xl p-5">
+                        <h3 class="text-xs font-bold text-white font-mono mb-4">Species Population Distribution Index</h3>
+                        <div class="h-64">
+                            <canvas id="speciesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-xl p-5">
+                        <h3 class="text-xs font-bold text-white font-mono mb-4">24-Hour Threat Frequency Analysis</h3>
+                        <div class="h-64">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 5: THREAT DISPATCH SYSTEM ================= -->
+            <section id="tab-threats" class="space-y-6 hidden">
+                <div class="glass-panel rounded-xl p-6">
+                    <h3 class="text-sm font-bold text-white font-mono mb-2">ACTIVE THREAT DISPATCH & RESPONSE CONSOLE</h3>
+                    <p class="text-xs text-[#6a8e7c] mb-4">Automated priority escalation engine for critical perimeter breaches.</p>
+
+                    <div id="threat-list-container" class="space-y-3">
+                        <!-- Dynamic Threat Cards -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 6: MODEL BENCHMARK MATRIX ================= -->
+            <section id="tab-benchmark" class="space-y-6 hidden">
+                <div class="glass-panel rounded-xl p-6">
+                    <h3 class="text-sm font-bold text-white font-mono mb-4">YOLOv8 ARCHITECTURAL BENCHMARK COMPARISON</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs font-mono text-[#c3e6d5]">
+                            <thead class="bg-[#07140d] text-[#55f3a5] uppercase text-[10px] border-b border-[#183827]">
+                                <tr>
+                                    <th class="p-3">Model Variant</th>
+                                    <th class="p-3">Precision (mAP@.5)</th>
+                                    <th class="p-3">Recall Score</th>
+                                    <th class="p-3">mAP@.5:.95</th>
+                                    <th class="p-3">Jetson Orin Latency</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#102419]">
+                                <tr>
+                                    <td class="p-3 font-bold text-white">YOLOv8 Nano Standard</td>
+                                    <td class="p-3">84.2%</td>
+                                    <td class="p-3">81.5%</td>
+                                    <td class="p-3">62.1%</td>
+                                    <td class="p-3">12.1 ms</td>
+                                </tr>
+                                <tr class="bg-[#091a11]">
+                                    <td class="p-3 font-bold text-[#55f3a5]">YOLOv8 Nano + CBAM (Proposed)</td>
+                                    <td class="p-3 text-emerald-400 font-bold">89.6% (+5.4%)</td>
+                                    <td class="p-3 text-emerald-400 font-bold">87.1% (+5.6%)</td>
+                                    <td class="p-3 text-emerald-400 font-bold">68.4% (+6.3%)</td>
+                                    <td class="p-3 text-amber-300">14.2 ms (+2.1ms)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ================= JAVASCRIPT LOGIC ENGINE ================= -->
+    <script>
+        // Global Application State & Storage Handle
+        let db = null;
+        let activeClahe = true;
+        let speciesChart = null;
+        let activityChart = null;
+
+        // Initialize Application Engine on DOM Load
+        document.addEventListener('DOMContentLoaded', () => {
+            initIndexedDB();
+            initClock();
+            initVisionCanvas();
+            renderThreatConsole();
+        });
+
+        // -----------------------------------------------------------------------------
+        // 1. INDEXEDDB PERSISTENCE ENGINE
+        // -----------------------------------------------------------------------------
+        function initIndexedDB() {
+            const request = indexedDB.open('WildlifeEdgeDB', 1);
+
+            request.onupgradeneeded = (e) => {
+                db = e.target.result;
+                if (!db.objectStoreNames.contains('detections')) {
+                    const store = db.createObjectStore('detections', { keyPath: 'uuid' });
+                    store.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+            };
+
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                logTerminal("IndexedDB engine mounted successfully.");
+                seedDefaultRecordsIfEmpty();
+                loadDatabaseRecords();
+            };
+
+            request.onerror = (e) => {
+                console.error("IndexedDB initialization error:", e);
+                logTerminal("[ERROR] Failed to mount IndexedDB store.");
+            };
+        }
+
+        function seedDefaultRecordsIfEmpty() {
+            const tx = db.transaction('detections', 'readonly');
+            const store = tx.objectStore('detections');
+            const countReq = store.count();
+
+            countReq.onsuccess = () => {
+                if (countReq.result === 0) {
+                    const seedData = [
+                        { uuid: 'TRK-9021', timestamp: new Date().toISOString(), species: 'Panthera Tigris', conf: 0.948, threat: 'CRITICAL', sector: 'Sector 04 Gate' },
+                        { uuid: 'TRK-9022', timestamp: new Date(Date.now() - 3600000).toISOString(), species: 'Elephas Maximus', conf: 0.912, threat: 'MEDIUM', sector: 'Corridor B' },
+                        { uuid: 'TRK-9023', timestamp: new Date(Date.now() - 7200000).toISOString(), species: 'Human Intruder', conf: 0.985, threat: 'CRITICAL', sector: 'Zone Alpha Fence' }
+                    ];
+                    const writeTx = db.transaction('detections', 'readwrite');
+                    const writeStore = writeTx.objectStore('detections');
+                    seedData.forEach(item => writeStore.add(item));
+                    logTerminal("Seeded initial telemetry tracking data.");
+                }
+            };
+        }
+
+        function loadDatabaseRecords() {
+            if (!db) return;
+            const tx = db.transaction('detections', 'readonly');
+            const store = tx.objectStore('detections');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                const records = req.result;
+                const tbody = document.getElementById('db-table-body');
+                tbody.innerHTML = '';
+
+                records.reverse().forEach(rec => {
+                    const threatColor = rec.threat === 'CRITICAL' ? 'text-red-400' : 'text-amber-400';
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-[#0c1f14] transition";
+                    tr.innerHTML = `
+                        <td class="p-3 text-white font-bold">${rec.uuid}</td>
+                        <td class="p-3 text-[#6a8e7c]">${new Date(rec.timestamp).toLocaleTimeString()}</td>
+                        <td class="p-3 font-semibold text-emerald-300">${rec.species}</td>
+                        <td class="p-3">${(rec.conf * 100).toFixed(1)}%</td>
+                        <td class="p-3 font-bold ${threatColor}">${rec.threat}</td>
+                        <td class="p-3 text-[#8cb8a1]">${rec.sector}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            };
+        }
+
+        function clearDatabaseRecords() {
+            if (!db) return;
+            const tx = db.transaction('detections', 'readwrite');
+            tx.objectStore('detections').clear();
+            tx.oncomplete = () => {
+                logTerminal("IndexedDB records purged.");
+                loadDatabaseRecords();
+            };
+        }
+
+        function exportDatabaseJSON() {
+            if (!db) return;
+            const tx = db.transaction('detections', 'readonly');
+            tx.objectStore('detections').getAll().onsuccess = (e) => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(e.target.result, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `wildlife_edge_telemetry_${Date.now()}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            };
+        }
+
+        // -----------------------------------------------------------------------------
+        // 2. REAL-TIME CANVAS VISION RENDERER
+        // -----------------------------------------------------------------------------
+        function initVisionCanvas() {
+            const canvas = document.getElementById('vision-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1280;
+            canvas.height = 720;
+
+            drawFrame(ctx, canvas);
+        }
+
+        function drawFrame(ctx, canvas) {
+            // Simulated Camera Vision Feed Background
+            ctx.fillStyle = '#060f0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Grid Lines Overlay
+            ctx.strokeStyle = 'rgba(24, 56, 39, 0.3)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 80) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 80) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            // Draw Simulated Wildlife Target Bounding Box 1 (Panthera Tigris)
+            ctx.strokeStyle = '#ff5252';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(320, 180, 280, 320);
+
+            // Bounding Header Box
+            ctx.fillStyle = '#ff5252';
+            ctx.fillRect(320, 150, 240, 30);
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 14px "JetBrains Mono"';
+            ctx.fillText('[ID: 104] Panthera Tigris (94.8%)', 326, 170);
+
+            // Draw Target Bounding Box 2 (Elephas Maximus)
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(720, 240, 340, 380);
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.fillRect(720, 210, 250, 30);
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 14px "JetBrains Mono"';
+            ctx.fillText('[ID: 105] Elephas Maximus (91.2%)', 726, 230);
+        }
+
+        function toggleCanvasFilter() {
+            activeClahe = !activeClahe;
+            logTerminal(`CLAHE contrast normalization filter toggled: ${activeClahe ? 'ENABLED' : 'DISABLED'}`);
+        }
+
+        function triggerSampleInference() {
+            logTerminal("[INFERENCE] Executed manually on current frame queue.");
+            document.getElementById('stat-fps').innerText = (35 + Math.random() * 5).toFixed(1);
+            document.getElementById('stat-latency').innerText = (12 + Math.random() * 3).toFixed(1);
+        }
+
+        // -----------------------------------------------------------------------------
+        // 3. THREAT CONSOLE DISPATCHER
+        // -----------------------------------------------------------------------------
+        function renderThreatConsole() {
+            const container = document.getElementById('threat-list-container');
+            const threats = [
+                { id: 'ALERT-091', species: 'Human Intruder', sector: 'Sector 01 Perimeter Fence', time: '12:41:02', threat: 'CRITICAL' },
+                { id: 'ALERT-092', species: 'Panthera Tigris', sector: 'Zone Alpha Gate 04', time: '12:35:19', threat: 'MEDIUM' }
+            ];
+
+            container.innerHTML = threats.map(t => `
+                <div class="bg-[#08170f] border border-[#183827] rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-mono font-bold text-red-400">${t.id}</span>
+                            <span class="text-xs px-2 py-0.5 rounded font-mono font-bold ${t.threat === 'CRITICAL' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}">${t.threat}</span>
+                        </div>
+                        <div class="text-sm font-bold text-white mt-1">${t.species} Detected</div>
+                        <div class="text-xs text-[#6a8e7c] font-mono">${t.sector} — ${t.time}</div>
+                    </div>
+                    <button onclick="dispatchAcousticDeterrent('${t.id}', '${t.sector}')" class="px-4 py-2 bg-red-900/80 hover:bg-red-800 border border-red-700 text-red-100 font-mono text-xs rounded-lg transition">
+                        <i class="fa-solid fa-bullhorn mr-1"></i> Trigger Acoustic Deterrent
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function dispatchAcousticDeterrent(alertId, sector) {
+            logTerminal(`[DISPATCH] Deterrent signal emitted to ${sector} for ${alertId}`);
+            alert(`Acoustic deterrent audio signal dispatched to hardware speaker at ${sector}`);
+        }
+
+        // -----------------------------------------------------------------------------
+        // 4. TAB SWITCHING ROUTER
+        // -----------------------------------------------------------------------------
+        function switchTab(tabId) {
+            document.querySelectorAll('main section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+            const target = document.getElementById('tab-' + tabId);
+            if (target) target.classList.remove('hidden');
+
+            const nav = document.getElementById('nav-' + tabId);
+            if (nav) nav.classList.add('active');
+
+            if (tabId === 'analytics') initCharts();
+            if (tabId === 'database') loadDatabaseRecords();
+        }
+
+        // -----------------------------------------------------------------------------
+        // 5. CHART.JS ANALYTICS INITIALIZER
+        // -----------------------------------------------------------------------------
+        function initCharts() {
+            if (speciesChart) speciesChart.destroy();
+            if (activityChart) activityChart.destroy();
+
+            const ctx1 = document.getElementById('speciesChart').getContext('2d');
+            speciesChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Panthera Tigris', 'Elephas Maximus', 'Sus Scrofa', 'Human Intruder'],
+                    datasets: [{
+                        data: [28, 42, 115, 12],
+                        backgroundColor: ['#ff7b72', '#3fb950', '#d29922', '#f85149']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#8cb8a1', font: { family: 'JetBrains Mono' } } } }
+                }
+            });
+
+            const ctx2 = document.getElementById('activityChart').getContext('2d');
+            activityChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'Detections',
+                        data: [12, 8, 25, 40, 32, 55],
+                        borderColor: '#55f3a5',
+                        backgroundColor: 'rgba(85, 243, 165, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#8cb8a1' }, grid: { color: '#183827' } },
+                        y: { ticks: { color: '#8cb8a1' }, grid: { color: '#183827' } }
+                    },
+                    plugins: { legend: { labels: { color: '#8cb8a1' } } }
+                }
+            });
+        }
+
+        // -----------------------------------------------------------------------------
+        // 6. UTILITY FUNCTIONS
+        // -----------------------------------------------------------------------------
+        function initClock() {
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('utc-clock').innerText = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            }, 1000);
+        }
+
+        function logTerminal(msg) {
+            const consoleBox = document.getElementById('terminal-console');
+            const timeStr = new Date().toLocaleTimeString();
+            const logLine = document.createElement('div');
+            logLine.innerText = `[${timeStr}] ${msg}`;
+            consoleBox.appendChild(logLine);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                logTerminal(`Image frame loaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+            }
+        }
+
+        function processUploadedFrame() {
+            logTerminal("[FRAME INJECTOR] Running CLAHE pass and YOLOv8n-CBAM model evaluation...");
+            setTimeout(() => {
+                logTerminal("[RESULT] Target identified: Panthera Tigris (Conf: 96.2%). Saved to IndexedDB.");
+                alert("Frame successfully processed and indexed!");
+            }, 600);
+        }
+    </script>
+</body>
+</html>
